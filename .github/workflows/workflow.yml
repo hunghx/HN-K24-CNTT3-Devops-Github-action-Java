@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+    
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+    
+    - name: Code syntax check
+      run: ./gradlew check --stacktrace
+    
+    - name: Build
+      run: ./gradlew build -x test --stacktrace
+    
+    - name: Run tests
+      run: ./gradlew test --stacktrace
+    
+    - name: Package JAR
+      run: ./gradlew bootJar --stacktrace
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: build-artifacts
+        path: |
+          build/libs/*.jar
+          build/reports/
+        retention-days: 30
+
